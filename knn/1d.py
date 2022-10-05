@@ -295,39 +295,39 @@ for row in data[:, :-1]:
 
 # 1
 print("k=1")
-kfcv.kFCVEvaluate(trainFeatures, 14, 1, 'euclidean')
+kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 1, 'euclidean')
 print("----------------------------------------------")
 
 # 3
 print("k=3")
-kfcv.kFCVEvaluate(trainFeatures, 14, 3, 'euclidean')
+kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 3, 'euclidean')
 print("----------------------------------------------")
 
 # 5
 print("k=5")
-kfcv.kFCVEvaluate(trainFeatures, 14, 5, 'euclidean')
+kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 5, 'euclidean')
 print("----------------------------------------------")
 
 # 7
 print("k=7")
-kfcv.kFCVEvaluate(trainFeatures, 14, 7, 'euclidean')
+kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 7, 'euclidean')
 print("----------------------------------------------")
 
 # 9
 print("k=9")
-kfcv.kFCVEvaluate(trainFeatures, 14, 9, 'euclidean')
+kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 9, 'euclidean')
 print("----------------------------------------------")
 
 # 11
 print("k=11")
-kfcv.kFCVEvaluate(trainFeatures, 14, 11, 'euclidean')
+kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 11, 'euclidean')
 print("----------------------------------------------")
 
 
 # conclusion
 """
 The model accuracy drops significantly with the highest
-accuracy when modeling without the age data being 11.6% with k == 9.
+accuracy when modeling without the age data being 12.5% with k == 11.
 This implies that age is significant to the model when predicting gender.
 A second observation is the fact that the highest value of k==1
 has the highest accuracy unlike in the previous case where

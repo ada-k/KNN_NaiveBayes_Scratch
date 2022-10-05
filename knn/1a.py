@@ -59,8 +59,6 @@ steps (i.e., distance calculation, neighbor selection, and prediction).
 
 """
 
-# cartesian distance: k=1,3,7
-
 
 class KNearestNeighbors:
     def __init__(
@@ -89,7 +87,7 @@ class KNearestNeighbors:
     def manhattan_distance(self, a, b):
         return sum(abs(val1 - val2) for val1, val2 in zip(a, b))
 
-    def minkowski_distance(a, b, p=3):
+    def minkowski_distance(self, a, b, p=3):
         return np.sum(np.abs(a - b) ** p, axis=1) ** (1 / p)
 
     # neighnor selection
@@ -218,22 +216,22 @@ print("-------------------------------")
 
 
 # minkowski distance
-# print("minkowski distance: 1 neighbor")
-# knn = KNearestNeighbors(x_train, y_train, neighbors=1, distance="minkowski")
-# pred = knn.predict(x_test)
-# print(["F" if x == 1 else "M" for x in pred])
-# print("-------------------------------")
+print("minkowski distance: 1 neighbor")
+knn = KNearestNeighbors(x_train, y_train, neighbors=1, distance="minkowski")
+pred = knn.predict(x_test)
+print(["F" if x == 1 else "M" for x in pred])
+print("-------------------------------")
 
 
-# print("minkowski distance: 3 neighbors")
-# knn = KNearestNeighbors(x_train, y_train, neighbors=3, distance="minkowski")
-# pred = knn.predict(x_test)
-# print(["F" if x == 1 else "M" for x in pred])
-# print("-------------------------------")
+print("minkowski distance: 3 neighbors")
+knn = KNearestNeighbors(x_train, y_train, neighbors=3, distance="minkowski")
+pred = knn.predict(x_test)
+print(["F" if x == 1 else "M" for x in pred])
+print("-------------------------------")
 
 
-# print("minkowski distance: 7 neighbors")
-# knn = KNearestNeighbors(x_train, y_train, neighbors=7, distance="minkowski")
-# pred = knn.predict(x_test)
-# print(["F" if x == 1 else "M" for x in pred])
-# print("-------------------------------")
+print("minkowski distance: 7 neighbors")
+knn = KNearestNeighbors(x_train, y_train, neighbors=7, distance="minkowski")
+pred = knn.predict(x_test)
+print(["F" if x == 1 else "M" for x in pred])
+print("-------------------------------")

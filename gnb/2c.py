@@ -1,25 +1,13 @@
 # library
 import numpy as np
 from random import randrange
-import operator
+from math import sqrt, pi, exp
 
 """
-To evaluate the performance of the KNN algorithm
-(using Euclidean distance metric),
-implement a leave-one-out evaluation routine
-for your algorithm. In leave-one-out validation,
-we repeatedly evaluate the algorithm by removing
-one data point from the training set, training the algorithm
-on the remaining data set and then testing it on the point
-we removed to see if the label matches or not.
-Repeating this for each of the data points
-gives us an estimate as to the percentage of erroneous
-predictions the algorithm makes and thus a measure of the
-accuracy of the algorithm for the given data. Apply your leave-one-out
-validation with your KNN algorithm to the dataset for Question 1 c)
-for values for K of 1, 3, 5, 7, 9, and 11 and report the results.
-For which value of K do you get the best performance?
+Repeat the experiment in part 1 c) with the
+Gaussian Na ̈ ıve Bayes Classifier.
 """
+
 # data
 # Question 1 c, 1 d, 2 c, 2 d) Program Data
 # replaced F=1, M=0
@@ -149,180 +137,133 @@ data = np.array(
 )
 
 
-# classifier
-class kNNClassifier:
-    def __init__(self, k=3, distanceMetric="euclidean"):
-        pass
-
-    def fit(self, xTrain, yTrain):
-
-        assert len(xTrain) == len(yTrain)
-        self.trainData = xTrain
-        self.trainLabels = yTrain
-
-    def getNeighbors(self, testRow):
-
-        calcDM = distanceMetrics()
-        distances = []
-        for i, trainRow in enumerate(self.trainData):
-            if self.distanceMetric == "euclidean":
-                distances.append(
-                    [
-                        trainRow,
-                        calcDM.euclideanDistance(testRow, trainRow),
-                        self.trainLabels[i],
-                    ]
-                )
-            elif self.distanceMetric == "manhattan":
-                distances.append(
-                    [
-                        trainRow,
-                        calcDM.manhattanDistance(testRow, trainRow),
-                        self.trainLabels[i],
-                    ]
-                )
-            elif self.distanceMetric == "hamming":
-                distances.append(
-                    [
-                        trainRow,
-                        calcDM.hammingDistance(testRow, trainRow),
-                        self.trainLabels[i],
-                    ]
-                )
-            distances.sort(key=operator.itemgetter(1))
-
-        neighbors = []
-        for index in range(self.k):
-            neighbors.append(distances[index])
-        return neighbors
-
-    def predict(self, xTest, k, distanceMetric):
-
-        self.testData = xTest
-        self.k = k
-        self.distanceMetric = distanceMetric
-        predictions = []
-
-        for i, testCase in enumerate(self.testData):
-            neighbors = self.getNeighbors(testCase)
-            output = [row[-1] for row in neighbors]
-            prediction = max(set(output), key=output.count)
-            predictions.append(prediction)
-
-        return predictions
+# Split the dataset by class values, returns a dictionary
+def separate_by_class(dataset):
+    separated = dict()
+    for i in range(len(dataset)):
+        vector = dataset[i]
+        class_value = vector[-1]
+        if (class_value not in separated):
+            separated[class_value] = list()
+        separated[class_value].append(vector)
+    return separated
 
 
-class distanceMetrics:
-    def euclideanDistance(self, vector1, vector2):
-
-        self.vectorA, self.vectorB = vector1, vector2
-        if len(self.vectorA) != len(self.vectorB):
-            raise ValueError("Undefined for sequences of unequal length.")
-        distance = 0.0
-        for i in range(len(self.vectorA) - 1):
-            distance += (self.vectorA[i] - self.vectorB[i]) ** 2
-        return (distance) ** 0.5
+# Calculate the mean of a list of numbers
+def mean(numbers):
+    return sum(numbers)/float(len(numbers))
 
 
-def printMetrics(actual, predictions):
+# Calculate the standard deviation of a list of numbers
+def stdev(numbers):
+    avg = mean(numbers)
+    variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
+    return sqrt(variance)
 
-    assert len(actual) == len(predictions)
+
+# Calculate the mean, stdev and count for each column in a dataset
+def summarize_dataset(dataset):
+    summaries = [
+        (mean(column), stdev(column), len(column)) for column in zip(*dataset)]
+    del (summaries[-1])
+    return summaries
+
+
+# Split dataset by class then calculate statistics for each row
+def summarize_by_class(dataset):
+    separated = separate_by_class(dataset)
+    summaries = dict()
+    for class_value, rows in separated.items():
+        summaries[class_value] = summarize_dataset(rows)
+    return summaries
+
+
+# Calculate the Gaussian probability distribution function for x
+def calculate_probability(x, mean, stdev):
+    exponent = exp(-((x-mean)**2 / (2 * stdev**2)))
+    return (1 / (sqrt(2 * pi) * stdev)) * exponent
+
+
+# Calculate the probabilities of predicting each class for a given row
+def calculate_class_probabilities(summaries, row):
+    total_rows = sum([summaries[label][0][2] for label in summaries])
+    probabilities = dict()
+    for class_value, class_summaries in summaries.items():
+        probabilities[class_value] = summaries[
+            class_value][0][2]/float(total_rows)
+        for i in range(len(class_summaries)):
+            mean, stdev, _ = class_summaries[i]
+            probabilities[class_value] *= calculate_probability(
+                row[i], mean, stdev)
+    return probabilities
+
+
+# Predict the class for a given row
+def predict(summaries, row):
+    probabilities = calculate_class_probabilities(summaries, row)
+    best_label, best_prob = None, -1
+    for class_value, probability in probabilities.items():
+        if best_label is None or probability > best_prob:
+            best_prob = probability
+            best_label = class_value
+    return best_label
+
+
+def naive_bayes(train, test):
+    summarize = summarize_by_class(train)
+    predictions = list()
+    for row in test:
+        output = predict(summarize, row)
+        predictions.append(output)
+    return (predictions)
+
+
+def accuracy_metric(actual, predicted):
     correct = 0
     for i in range(len(actual)):
-        if actual[i] == predictions[i]:
+        if actual[i] == predicted[i]:
             correct += 1
     return correct / float(len(actual)) * 100.0
 
 
-# leave one out: similar to kfold with kfolds equal to samples in df
-class kFoldCV:
-    def __init__(self):
-        pass
-
-    def crossValSplit(self, dataset, numFolds):
-
-        dataSplit = list()
-        dataCopy = list(dataset)
-        foldSize = int(len(dataset) / numFolds)
-        for _ in range(numFolds):
-            fold = list()
-            while len(fold) < foldSize:
-                index = randrange(len(dataCopy))
-                fold.append(dataCopy.pop(index))
-            dataSplit.append(fold)
-        return dataSplit
-
-    def kFCVEvaluate(self, dataset, numFolds, *args):
-
-        knn = kNNClassifier()
-        folds = self.crossValSplit(dataset, numFolds)
-        scores = list()
-        for fold in folds:
-            trainSet = list(folds)
-            trainSet.remove(fold)
-            trainSet = sum(trainSet, [])
-            testSet = list()
-            for row in fold:
-                rowCopy = list(row)
-                testSet.append(rowCopy)
-
-            trainLabels = [row[-1] for row in trainSet]
-            trainSet = [train[:-1] for train in trainSet]
-            knn.fit(trainSet, trainLabels)
-
-            actual = [row[-1] for row in testSet]
-            testSet = [test[:-1] for test in testSet]
-
-            predicted = knn.predict(testSet, *args)
-
-            accuracy = printMetrics(actual, predicted)
-            scores.append(accuracy)
-
-        print("Maximum Accuracy: %3f%%" % max(scores))
-        print("Mean Accuracy: %.3f%%" % (sum(scores) / float(len(scores))))
+def cross_validation_split(dataset, n_folds):
+    dataset_split = list()
+    dataset_copy = list(dataset)
+    fold_size = int(len(dataset) / n_folds)
+    for _ in range(n_folds):
+        fold = list()
+        while len(fold) < fold_size:
+            index = randrange(len(dataset_copy))
+            fold.append(dataset_copy.pop(index))
+        dataset_split.append(fold)
+    return dataset_split
 
 
-# implementation with dataset
-kfcv = kFoldCV()
+def evaluate_algorithm(dataset, algorithm, n_folds, *args):
+    folds = cross_validation_split(dataset, n_folds)
+    scores = list()
+    for fold in folds:
+        train_set = list(folds)
+        train_set.remove(fold)
+        train_set = sum(train_set, [])
+        test_set = list()
+        for row in fold:
+            row_copy = list(row)
+            test_set.append(row_copy)
+            row_copy[-1] = None
+        predicted = algorithm(train_set, test_set, *args)
+        actual = [row[-1] for row in fold]
+        accuracy = accuracy_metric(actual, predicted)
+        scores.append(accuracy)
+    return scores
 
-# data prep
+
+# implementation on dataset data
 trainFeatures = []
 for row in data:
     index = row[0:]
     temp = [item for item in index]
     trainFeatures.append(temp)
 
-# 1
-print("k=1")
-kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 1, "euclidean")
-print("----------------------------------------------")
-
-# 3
-print("k=3")
-kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 3, "euclidean")
-print("----------------------------------------------")
-
-# 5
-print("k=5")
-kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 5, "euclidean")
-print("----------------------------------------------")
-
-# 7
-print("k=7")
-kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 7, "euclidean")
-print("----------------------------------------------")
-
-# 9
-print("k=9")
-kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 9, "euclidean")
-print("----------------------------------------------")
-
-# 11
-print("k=11")
-kfcv.kFCVEvaluate(trainFeatures, data.shape[0], 11, "euclidean")
-print("----------------------------------------------")
-
-# conclusion
-"""
-When k==3, the accuracy is highest with a percentage score of 70.833%.
-"""
+scores = evaluate_algorithm(trainFeatures, naive_bayes, data.shape[0])
+print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
